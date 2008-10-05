@@ -3,7 +3,7 @@
 
 # BEGIN CONFIGURATION ==========================================================
 
-BACKUP_DIR="~/site-backups"  # The directory in which you want backups placed
+BACKUP_DIR="/home/`whoami`/site-backups"  # The directory in which you want backups placed
 KEEP_MYSQL="14" # How many days worth of mysql dumps to keep
 KEEP_SITES="2" # How many days worth of site tarballs to keep
 

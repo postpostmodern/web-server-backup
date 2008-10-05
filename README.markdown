@@ -34,7 +34,7 @@ NOTE: The BACKUP\_DIR setting is preset to ~/site-backups. If you want to use so
 
 ## General Settings:
 
-* __BACKUP\_DIR__: The parent directory in which the backups will be placed. It's preset to: `"~/site-backups"`
+* __BACKUP\_DIR__: The parent directory in which the backups will be placed. It's preset to: `"/home/`whoami`/site-backups"`
 * __KEEP\_MYSQL__: How many days worth of mysql dumps to keep. It's preset to: `"14"`
 * __KEEP\_SITES__: How many days worth of site tarballs to keep. It's preset to: `"2"`
 * __THE\_DATE__: The date that will be appended to filenames. It's preset to: `"$(date '+%Y-%m-%d')"`
