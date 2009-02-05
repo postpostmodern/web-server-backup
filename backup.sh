@@ -3,7 +3,7 @@
 
 # BEGIN CONFIGURATION ==========================================================
 
-BACKUP_DIR="/home/`whoami`/site-backups"  # The directory in which you want backups placed
+BACKUP_DIR="/home/`whoami`/site_backups"  # The directory in which you want backups placed
 KEEP_MYSQL="14" # How many days worth of mysql dumps to keep
 KEEP_SITES="2" # How many days worth of site tarballs to keep
 
@@ -15,11 +15,23 @@ MYSQL_BACKUP_DIR="$BACKUP_DIR/mysql/"
 SITES_DIR="/var/www/sites/"
 SITES_BACKUP_DIR="$BACKUP_DIR/sites/"
 
-RSYNC="true" # Set to "false" if you don't want the rsync performed
+SYNC="s3sync" # Either 's3sync', 'rsync', or 'none'
+
+# See s3sync info in README
+S3SYNC_PATH="/usr/local/s3sync/s3sync.rb"
+S3_BUCKET="my-fancy-bucket"
+AWS_ACCESS_KEY_ID="YourAWSAccessKey" # Log in to your Amazon AWS account to get this
+AWS_SECRET_ACCESS_KEY="YourAWSSecretAccessKey" # Log in to your Amazon AWS account to get this
+USE_SSL="true"
+SSL_CERT_DIR="/etc/ssl/certs" # Where your Cert Authority keys live; for verification
+SSL_CERT_FILE="" # If you have just one PEM file for CA verification
+
+# If you don't want to use S3, you can rsync to another server
 RSYNC_USER="user"
 RSYNC_SERVER="other.server.com"
 RSYNC_DIR="web_site_backups"
 
+# You probably won't have to change these
 THE_DATE="$(date '+%Y-%m-%d')"
 
 MYSQL_PATH="$(which mysql)"
@@ -84,12 +96,30 @@ $FIND_PATH $SITES_BACKUP_DIR*.tgz -mtime +$KEEP_SITES
 $FIND_PATH $SITES_BACKUP_DIR*.tgz -mtime +$KEEP_SITES -delete
 
 # Rsync everything with another server
-if [[ $RSYNC == "true" ]]
+if [[ $SYNC == "rsync" ]]
   then
   echo "------------------------------------"
   echo "Sending backups to backup server..."
   $RSYNC_PATH --del -vaze ssh $BACKUP_DIR/ $RSYNC_USER@$RSYNC_SERVER:$RSYNC_DIR
+
+# OR s3sync everything with Amazon S3
+elif [[ $SYNC == "s3sync" ]]
+  then
+  export AWS_ACCESS_KEY_ID
+  export AWS_SECRET_ACCESS_KEY
+  export SSL_CERT_DIR
+  export SSL_CERT_FILE
+  if [[ $USE_SSL == "true" ]]
+    then
+    SSL_OPTION=' --ssl '
+    else
+    SSL_OPTION=''
+  fi
+  echo "------------------------------------"
+  echo "Sending backups to s3..."
+  $S3SYNC_PATH --delete -v $SSL_OPTION -r $BACKUP_DIR/ $S3_BUCKET:backups
 fi
+
 # Announce the completion time
 echo "------------------------------------"
 echo "Backup Completed: $(date)"
