@@ -76,7 +76,7 @@ echo "Deleting old backups..."
 # List dumps to be deleted to stdout (for report)
 $FIND_PATH $MYSQL_BACKUP_DIR*.sql.gz -mtime +$KEEP_MYSQL
 # Delete dumps older than specified number of days
-$FIND_PATH $MYSQL_BACKUP_DIR*.sql.gz -mtime +$KEEP_MYSQL -delete
+$FIND_PATH $MYSQL_BACKUP_DIR*.sql.gz -mtime +$KEEP_MYSQL -exec rm {} +
 
 # Get a list of files in the sites directory and tar them one by one
 echo "------------------------------------"
@@ -93,7 +93,7 @@ echo "Deleting old backups..."
 # List files to be deleted to stdout (for report)
 $FIND_PATH $SITES_BACKUP_DIR*.tgz -mtime +$KEEP_SITES
 # Delete files older than specified number of days
-$FIND_PATH $SITES_BACKUP_DIR*.tgz -mtime +$KEEP_SITES -delete
+$FIND_PATH $SITES_BACKUP_DIR*.tgz -mtime +$KEEP_SITES -exec rm {} +
 
 # Rsync everything with another server
 if [[ $SYNC == "rsync" ]]
