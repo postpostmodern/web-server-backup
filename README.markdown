@@ -1,16 +1,16 @@
-# Web Server Backup Script
+# Web Server Backup Script (now with S3 sync)
 
 This is a bash script for backing up multiple web sites and MySQL databases into a specified backups directory. It's a good idea to run it every night via cron.
 
 Once configured (variables set within the script), it does this:
 
-* Creates a directory for your site backups (if it doesn't exist)
+* Creates a directory for your site (files) backups (if it doesn't exist)
 * Creates a directory for your MySQL dumps (if it doesn't exist)
 * Loops through all of your MySQL databases and dumps each one of them to a gzipped file
 * Deletes database dumps older than a specified number of days from the backup directory
 * Tars and gzips each folder within your sites directory (I keep my websites in /var/www/sites/)
 * Deletes site archives older than a specified number of days from the backup directory
-* Optionally rsyncs all backup files to a remote server
+* Optionally syncs all backup files to Amazon S3 or a remote server, using s3sync.rb or rsync respectively
 
 # BETA WARNING
 
