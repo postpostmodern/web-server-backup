@@ -70,6 +70,7 @@ The only thing tricky about getting s3sync.rb installed is the CA certificates. 
 * __RSYNC\_USER__: The user account name on the remote server. Please note that there is no password setting. It is recommended that you use an SSH key. ___You'll need to set this yourself!___
 * __RSYNC\_SERVER__: The server address of the remote server. ___You'll need to set this yourself!___ It's preset to: `"other.server.com"`
 * __RSYNC\_DIR__: The directory on the remote server that will be synchronized with $BACKUP\_DIR. It's preset to: `"web_site_backups"`
+* __RSYNC\_PORT__: If you have set a custom SSH port on your remote server, you'll need to change this. It's preset to: `"22"`
 
 ## Date format: (change if you want)
 

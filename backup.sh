@@ -30,6 +30,7 @@ SSL_CERT_FILE="" # If you have just one PEM file for CA verification
 RSYNC_USER="user"
 RSYNC_SERVER="other.server.com"
 RSYNC_DIR="web_site_backups"
+RSYNC_PORT="22" # Change this if you've customized the SSH port of your backup system
 
 # You probably won't have to change these
 THE_DATE="$(date '+%Y-%m-%d')"
@@ -100,7 +101,7 @@ if [[ $SYNC == "rsync" ]]
   then
   echo "------------------------------------"
   echo "Sending backups to backup server..."
-  $RSYNC_PATH --del -vaze ssh $BACKUP_DIR/ $RSYNC_USER@$RSYNC_SERVER:$RSYNC_DIR
+  $RSYNC_PATH --del -vaze "ssh -p $RSYNC_PORT" $BACKUP_DIR/ $RSYNC_USER@$RSYNC_SERVER:$RSYNC_DIR
 
 # OR s3sync everything with Amazon S3
 elif [[ $SYNC == "s3sync" ]]
