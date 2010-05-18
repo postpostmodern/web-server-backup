@@ -67,8 +67,11 @@ echo "------------------------------------"
 DBS="$($MYSQL_PATH -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -Bse 'show databases')"
 for db in $DBS
 do
-  echo "Dumping: $db..."
-  $MYSQLDUMP_PATH -u $MYSQL_USER -p$MYSQL_PASS $db | gzip > $MYSQL_BACKUP_DIR$db\_$THE_DATE.sql.gz
+  if [[ $db != "information_schema" && $db != "mysql" ]]
+    then
+    echo "Dumping: $db..."
+    $MYSQLDUMP_PATH -u $MYSQL_USER -p$MYSQL_PASS $db | gzip > $MYSQL_BACKUP_DIR$db\_$THE_DATE.sql.gz
+  fi
 done
 
 # Delete old dumps
