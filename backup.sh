@@ -4,6 +4,9 @@
 # BEGIN CONFIGURATION ==========================================================
 
 BACKUP_DIR="/backups/site_backups"  # The directory in which you want backups placed
+DUMP_MYSQL=true
+TAR_SITES=false
+SYNC="none" # Either 's3sync', 'rsync', or 'none'
 KEEP_MYSQL="14" # How many days worth of mysql dumps to keep
 KEEP_SITES="2" # How many days worth of site tarballs to keep
 
@@ -15,7 +18,6 @@ MYSQL_BACKUP_DIR="$BACKUP_DIR/mysql/"
 SITES_DIR="/var/www/sites/"
 SITES_BACKUP_DIR="$BACKUP_DIR/sites/"
 
-SYNC="s3sync" # Either 's3sync', 'rsync', or 'none'
 
 # See s3sync info in README
 S3SYNC_PATH="/usr/local/s3sync/s3sync.rb"
@@ -62,52 +64,62 @@ if [[ ! -d $SITES_BACKUP_DIR ]]
   mkdir -p "$SITES_BACKUP_DIR"
 fi
 
-# Get a list of mysql databases and dump them one by one
-echo "------------------------------------"
-DBS="$($MYSQL_PATH -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -Bse 'show databases')"
-for db in $DBS
-do
-  if [[ $db != "information_schema" && $db != "mysql" ]]
-    then
-    echo "Dumping: $db..."
-    $MYSQLDUMP_PATH -u $MYSQL_USER -p$MYSQL_PASS $db | gzip > $MYSQL_BACKUP_DIR$db\_$THE_DATE.sql.gz
-  fi
-done
+if [ "$DUMP_MYSQL" = "true" ]
+  then
 
-# Delete old dumps
-echo "------------------------------------"
-echo "Deleting old backups..."
-# List dumps to be deleted to stdout (for report)
-$FIND_PATH $MYSQL_BACKUP_DIR*.sql.gz -mtime +$KEEP_MYSQL
-# Delete dumps older than specified number of days
-$FIND_PATH $MYSQL_BACKUP_DIR*.sql.gz -mtime +$KEEP_MYSQL -exec rm {} +
+  # Get a list of mysql databases and dump them one by one
+  echo "------------------------------------"
+  DBS="$($MYSQL_PATH -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -Bse 'show databases')"
+  for db in $DBS
+  do
+    if [[ $db != "information_schema" && $db != "mysql" && $db != "performance_schema" ]]
+      then
+      echo "Dumping: $db..."
+      $MYSQLDUMP_PATH -u $MYSQL_USER -p$MYSQL_PASS $db | gzip > $MYSQL_BACKUP_DIR$db\_$THE_DATE.sql.gz
+    fi
+  done
 
-# Get a list of files in the sites directory and tar them one by one
-echo "------------------------------------"
-cd $SITES_DIR
-for d in *
-do
-  echo "Archiving $d..."
-  $TAR_PATH --exclude="*/log" -C $SITES_DIR -czf $SITES_BACKUP_DIR/$d\_$THE_DATE.tgz $d
-done
+  # Delete old dumps
+  echo "------------------------------------"
+  echo "Deleting old backups..."
+  # List dumps to be deleted to stdout (for report)
+  $FIND_PATH $MYSQL_BACKUP_DIR*.sql.gz -mtime +$KEEP_MYSQL
+  # Delete dumps older than specified number of days
+  $FIND_PATH $MYSQL_BACKUP_DIR*.sql.gz -mtime +$KEEP_MYSQL -exec rm {} +
 
-# Delete old site backups
-echo "------------------------------------"
-echo "Deleting old backups..."
-# List files to be deleted to stdout (for report)
-$FIND_PATH $SITES_BACKUP_DIR*.tgz -mtime +$KEEP_SITES
-# Delete files older than specified number of days
-$FIND_PATH $SITES_BACKUP_DIR*.tgz -mtime +$KEEP_SITES -exec rm {} +
+fi
+
+if [ "$TAR_SITES" == "true" ]
+  then
+
+  # Get a list of files in the sites directory and tar them one by one
+  echo "------------------------------------"
+  cd $SITES_DIR
+  for d in *
+  do
+    echo "Archiving $d..."
+    $TAR_PATH --exclude="*/log" -C $SITES_DIR -czf $SITES_BACKUP_DIR/$d\_$THE_DATE.tgz $d
+  done
+
+  # Delete old site backups
+  echo "------------------------------------"
+  echo "Deleting old backups..."
+  # List files to be deleted to stdout (for report)
+  $FIND_PATH $SITES_BACKUP_DIR*.tgz -mtime +$KEEP_SITES
+  # Delete files older than specified number of days
+  $FIND_PATH $SITES_BACKUP_DIR*.tgz -mtime +$KEEP_SITES -exec rm {} +
+
+fi
 
 # Rsync everything with another server
-if [[ $SYNC == "rsync" ]]
+if [[ "$SYNC" == "rsync" ]]
   then
   echo "------------------------------------"
   echo "Sending backups to backup server..."
   $RSYNC_PATH --del -vaze "ssh -p $RSYNC_PORT" $BACKUP_DIR/ $RSYNC_USER@$RSYNC_SERVER:$RSYNC_DIR
 
 # OR s3sync everything with Amazon S3
-elif [[ $SYNC == "s3sync" ]]
+elif [[ "$SYNC" == "s3sync" ]]
   then
   export AWS_ACCESS_KEY_ID
   export AWS_SECRET_ACCESS_KEY
