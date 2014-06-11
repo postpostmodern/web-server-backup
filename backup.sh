@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # BEGIN CONFIGURATION ==========================================================
 
 BACKUP_DIR="/backups/site_backups"  # The directory in which you want backups placed
@@ -75,7 +74,7 @@ if [ "$DUMP_MYSQL" = "true" ]
     if [[ $db != "information_schema" && $db != "mysql" && $db != "performance_schema" ]]
       then
       echo "Dumping: $db..."
-      $MYSQLDUMP_PATH -u $MYSQL_USER -p$MYSQL_PASS $db | gzip > $MYSQL_BACKUP_DIR$db\_$THE_DATE.sql.gz
+      $MYSQLDUMP_PATH --opt --skip-add-locks -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS $db | gzip > $MYSQL_BACKUP_DIR$db\_$THE_DATE.sql.gz
     fi
   done
 
