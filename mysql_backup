@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# BEGIN CONFIGURATION ==========================================================
+
+BACKUP_DIR="/backups/"  # The directory in which you want backups placed
+KEEP_MYSQL="14" # How many days worth of mysql dumps to keep
+
+MYSQL_HOST="localhost"
+MYSQL_USER="root"
+MYSQL_PASS=""
+MYSQL_BACKUP_DIR="$BACKUP_DIR/mysql/"
+
+# You probably won't have to change these
+THE_DATE="$(date '+%Y-%m-%d')"
+
+MYSQL_PATH="$(which mysql)"
+MYSQLDUMP_PATH="$(which mysqldump)"
+FIND_PATH="$(which find)"
+TAR_PATH="$(which tar)"
+RSYNC_PATH="$(which rsync)"
+
+# END CONFIGURATION ============================================================
+
+
+
+# Announce the backup time
+echo "Backup Started: $(date)"
+
+# Create the backup dirs if they don't exist
+if [[ ! -d $BACKUP_DIR ]]
+  then
+  mkdir -p "$BACKUP_DIR"
+fi
+if [[ ! -d $MYSQL_BACKUP_DIR ]]
+  then
+  mkdir -p "$MYSQL_BACKUP_DIR"
+fi
+
+# Get a list of mysql databases and dump them one by one
+echo "------------------------------------"
+ALL_DBS=($($MYSQL_PATH -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -Bse 'show databases'))
+SYSTEM_DBS=("information_schema" "mysql" "performance_schema" "test")
+DBS=()
+
+for i in "${ALL_DBS[@]}"; do
+  skip=
+  for j in "${SYSTEM_DBS[@]}"; do
+    [[ $i == $j ]] && { skip=1; break; }
+  done
+  [[ -n $skip ]] || DBS+=("$i")
+done
+
+for db in "${DBS[@]}"; do
+  echo "Dumping: $db..."
+  $MYSQLDUMP_PATH --opt --skip-add-locks -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS $db | gzip > $MYSQL_BACKUP_DIR$db\_$THE_DATE.sql.gz
+done
+
+# Delete old dumps
+echo "------------------------------------"
+echo "Deleting old backups..."
+# List dumps to be deleted to stdout (for report)
+$FIND_PATH $MYSQL_BACKUP_DIR*.sql.gz -mtime +$KEEP_MYSQL
+# Delete dumps older than specified number of days
+$FIND_PATH $MYSQL_BACKUP_DIR*.sql.gz -mtime +$KEEP_MYSQL -exec rm {} +
+
+
+# Announce the completion time
+echo "------------------------------------"
+echo "Backup Completed: $(date)"
