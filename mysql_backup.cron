@@ -1,0 +1,6 @@
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin:/usr/local/sbin
+MAILTO=someone@example.com
+HOME=/root
+
+00 3 * * * root /usr/local/web-server-backup/mysql_backup > /dev/null
