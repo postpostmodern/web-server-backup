@@ -5,7 +5,7 @@
 BACKUP_DIR="/backups/site_backups"  # The directory in which you want backups placed
 DUMP_MYSQL=true
 TAR_SITES=false
-SYNC="none" # Either 's3sync', 'rsync', or 'none'
+SYNC="none" # Either 's3cmd', 's3sync', 'rsync', or 'none'
 KEEP_MYSQL="14" # How many days worth of mysql dumps to keep
 KEEP_SITES="2" # How many days worth of site tarballs to keep
 
@@ -16,6 +16,10 @@ MYSQL_BACKUP_DIR="$BACKUP_DIR/mysql/"
 
 SITES_DIR="/var/www/sites/"
 SITES_BACKUP_DIR="$BACKUP_DIR/sites/"
+
+#S3CMD
+S3CMD_PATH="$(which s3cmd)"
+S3CMD_S3_BUCKET="tesla.rhwilr.ch"
 
 
 # See s3sync info in README
@@ -133,6 +137,14 @@ elif [[ "$SYNC" == "s3sync" ]]
   echo "------------------------------------"
   echo "Sending backups to s3..."
   $S3SYNC_PATH --delete -v $SSL_OPTION -r $BACKUP_DIR/ $S3_BUCKET:backups
+  
+# OR sync to S3 with s3cmd
+elif [[ "$SYNC" == "s3cmd" ]]
+  then
+  echo "------------------------------------"
+  echo "Sending backups to s3..."
+  $S3CMD_PATH sync --delete-removed $BACKUP_DIR/ s3://$S3CMD_S3_BUCKET/backups/
+  
 fi
 
 # Announce the completion time
