@@ -2,12 +2,16 @@
 
 # BEGIN CONFIGURATION ==========================================================
 
-BACKUP_DIR="/backups/site_backups"  # The directory in which you want backups placed
+BACKUP_DIR="/backups"  # The directory in which you want backups placed
 DUMP_MYSQL=true
 TAR_SITES=false
+TAR_LETSENCRYPT=false
+
 SYNC="none" # Either 's3cmd', 's3sync', 'rsync', or 'none'
+
 KEEP_MYSQL="14" # How many days worth of mysql dumps to keep
-KEEP_SITES="2" # How many days worth of site tarballs to keep
+KEEP_SITES="14" # How many days worth of site tarballs to keep
+KEEP_LETSENCRYPT="120"
 
 MYSQL_HOST="localhost"
 MYSQL_USER="root"
@@ -16,6 +20,10 @@ MYSQL_BACKUP_DIR="$BACKUP_DIR/mysql/"
 
 SITES_DIR="/var/www/sites/"
 SITES_BACKUP_DIR="$BACKUP_DIR/sites/"
+
+LETSENCRYPT_DIR="/etc/letsencrypt/"
+LETSENCRYPT_BACKUP_DIR="$BACKUP_DIR/letsencrypt/"
+
 
 #S3CMD
 S3CMD_PATH="$(which s3cmd)"
@@ -66,6 +74,11 @@ if [[ ! -d $SITES_BACKUP_DIR ]]
   then
   mkdir -p "$SITES_BACKUP_DIR"
 fi
+if [[ ! -d $LETSENCRYPT_BACKUP_DIR ]]
+  then
+  mkdir -p "$LETSENCRYPT_BACKUP_DIR"
+fi
+
 
 if [ "$DUMP_MYSQL" = "true" ]
   then
@@ -113,6 +126,27 @@ if [ "$TAR_SITES" == "true" ]
   $FIND_PATH $SITES_BACKUP_DIR*.tgz -mtime +$KEEP_SITES -exec rm {} +
 
 fi
+
+if [ "$TAR_LETSENCRYPT" == "true" ]
+  then
+
+  # Create tar of letsencrypt directory.
+  echo "------------------------------------"
+  cd $LETSENCRYPT_DIR
+
+  echo "Archiving Let's Encrypt..."
+  $TAR_PATH --exclude="*/log" -czf $LETSENCRYPT_BACKUP_DIR$THE_DATE.tgz $LETSENCRYPT_DIR
+
+  # Delete old letsencrypt backups
+  echo "------------------------------------"
+  echo "Deleting old backups..."
+  # List files to be deleted to stdout (for report)
+  $FIND_PATH $LETSENCRYPT_BACKUP_DIR*.tgz -mtime +$KEEP_LETSENCRYPT
+  # Delete files older than specified number of days
+  $FIND_PATH $LETSENCRYPT_BACKUP_DIR*.tgz -mtime +$KEEP_LETSENCRYPT -exec rm {} +
+
+fi
+
 
 # Rsync everything with another server
 if [[ "$SYNC" == "rsync" ]]
